@@ -14,12 +14,23 @@ def collate_fn(dataset_items: list[dict]):
             of the tensors.
     """
 
-    result_batch = {}
+    audio_mix = []
+    audio_s1 = []
+    audio_s2 = []
+    mouth_s1 = []
+    mouth_s2 = []
 
-    # example of collate_fn
-    result_batch["data_object"] = torch.vstack(
-        [elem["data_object"] for elem in dataset_items]
-    )
-    result_batch["labels"] = torch.tensor([elem["labels"] for elem in dataset_items])
+    for item in dataset_items:
+        audio_mix.append(item["audio_mix"].unsqueeze(0))
+        audio_s1.append(item["audio_s1"].unsqueeze(0))
+        audio_s2.append(item["audio_s2"].unsqueeze(0))
+        mouth_s1.append(item["mouth_s1"].unsqueeze(0))
+        mouth_s2.append(item["mouth_s2"].unsqueeze(0))
 
-    return result_batch
+    return {
+        "audio_mix": torch.vstack(audio_mix),
+        "audio_s1": torch.vstack(audio_s1),
+        "audio_s2": torch.vstack(audio_s2),
+        "mouth_s1": torch.vstack(mouth_s1),
+        "mouth_s2": torch.vstack(mouth_s2),
+    }

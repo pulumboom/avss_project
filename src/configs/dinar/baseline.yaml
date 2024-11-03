@@ -2,9 +2,9 @@ defaults:
   - model: baseline
   - writer: wandb
   - metrics: example
-  - datasets: example
+  - datasets: av
   - dataloader: example
-  - transforms: example
+  - transforms: example_only_batch
   - _self_
 optimizer:
   _target_: torch.optim.Adam
@@ -19,10 +19,10 @@ trainer:
   log_step: 50
   n_epochs: 100
   epoch_len: 500
-  device_tensors: ["data_object", "labels"] # which tensors should be on device (ex. GPU)
+  device_tensors: ["audio_mix", "audio_s1", "audio_s2"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"
-  override: False # if True, will override the previous run with the same name
+  override: True # if True, will override the previous run with the same name
   monitor: "max test_MulticlassAccuracy" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
   save_period: 5 # checkpoint each save_period epochs in addition to the best epoch
   early_stop: ${trainer.n_epochs} # epochs for early stopping
