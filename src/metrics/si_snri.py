@@ -28,7 +28,14 @@ class SI_SNRi(BaseMetric):
             pred_audio_s2: torch.Tensor, 
             **kwargs
         ):
-        return (
+        perm1 = (
             (self.metric(pred_audio_s1, audio_s1) - self.metric(audio_mix, audio_s1)) + 
             (self.metric(pred_audio_s2, audio_s2) - self.metric(audio_mix, audio_s2))
         ) / 2
+
+        perm2 = (
+            (self.metric(pred_audio_s2, audio_s1) - self.metric(audio_mix, audio_s1)) + 
+            (self.metric(pred_audio_s1, audio_s2) - self.metric(audio_mix, audio_s2))
+        ) / 2
+
+        return max(perm1, perm2)
