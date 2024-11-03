@@ -39,14 +39,7 @@ class PESQ(BaseMetric):
         Returns:
             metric (float): calculated metric.
         """
-        perm1 = (
+        return (
             self.metric(pred_audio_s1, audio_s1) + 
             self.metric(pred_audio_s2, audio_s2)
         ) / 2
-
-        perm2 = (
-            self.metric(pred_audio_s2, audio_s1) + 
-            self.metric(pred_audio_s1, audio_s2)
-        ) / 2
-
-        return max(perm1, perm2)

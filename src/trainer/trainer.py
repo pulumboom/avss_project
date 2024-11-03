@@ -75,5 +75,11 @@ class Trainer(BaseTrainer):
             # Log Stuff
             pass
         else:
-            # Log Stuff
-            pass
+            self._log_audio(batch)
+
+    def _log_audio(self, batch, examples_to_log=5):
+        self.writer.add_audio("audio_mix", batch["audio_mix"][:examples_to_log], 16000)
+        self.writer.add_audio("audio_s1", batch["audio_s1"][:examples_to_log], 16000)
+        self.writer.add_audio("pred_audio_s1", batch["pred_audio_s1"][:examples_to_log], 16000)
+        self.writer.add_audio("audio_s2", batch["audio_s2"][:examples_to_log], 16000)
+        self.writer.add_audio("pred_audio_s2", batch["pred_audio_s2"][:examples_to_log], 16000)
