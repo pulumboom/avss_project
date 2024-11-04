@@ -16,5 +16,4 @@ pre-commit
 
 pystoi
 pesq
-multiprocessing # for pesq
-fast-bss-eval # for sdri
+fast-bss-eval

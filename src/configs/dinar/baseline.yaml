@@ -1,5 +1,5 @@
 defaults:
-  - model: baseline
+  - model: dprnn
   - writer: wandb
   - metrics: audio_metrics
   - datasets: av
@@ -14,7 +14,7 @@ lr_scheduler:
   gamma: 0.9
   step_size: ${trainer.epoch_len}
 loss_function:
-  _target_: src.loss.ExampleLoss
+  _target_: src.loss.SiSNR_PIT
 trainer:
   log_step: 50
   n_epochs: 100
