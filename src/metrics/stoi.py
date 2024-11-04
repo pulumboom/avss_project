@@ -1,7 +1,7 @@
 import torch
 
 from src.metrics.base_metric import BaseMetric
-from torchmetrics.audio import ShortTimeObjectiveIntelligibility
+from torchmetrics.audio.stoi import ShortTimeObjectiveIntelligibility
 
 
 class STOI(BaseMetric):
