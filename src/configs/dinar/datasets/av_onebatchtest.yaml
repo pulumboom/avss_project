@@ -1,0 +1,7 @@
+train:
+  _target_: src.datasets.AvssDataset
+  name: "train"
+  limit: 10
+val:
+  _target_: src.datasets.AvssDataset
+  limit: 10
