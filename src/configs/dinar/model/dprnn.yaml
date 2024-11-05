@@ -1,2 +1,3 @@
 _target_: src.model.DPRNN
 rnn_block: "LSTM"
+dprnn_blocks_n: 1

@@ -11,6 +11,7 @@ from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
+torch.autograd.set_detect_anomaly(True)
 
 @hydra.main(version_base=None, config_path="src/configs/dinar", config_name="baseline")
 def main(config):
