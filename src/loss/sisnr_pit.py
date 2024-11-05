@@ -61,6 +61,11 @@ class SiSNR_PIT(nn.Module):
         #################### Combining ##########################
         #########################################################
         si_snr = torch.hstack(si_snr_perm1, si_snr_perm2)
-        si_snr_pit = torch.max(si_snr, dim=-1).values
+        si_snr_pit = torch.max(si_snr, dim=-1)
+        best_perm = si_snr_pit.indices.reshape(-1, 1)
 
-        return {"loss": si_snr_pit.sum()}
+        return {
+            "loss": si_snr_pit.values.sum(),
+            "pred_audio_s1": torch.where(best_perm == 0, pred_audio_s1, pred_audio_s2),
+            "pred_audio_s2": torch.where(best_perm == 0, pred_audio_s2, pred_audio_s1),
+        }
