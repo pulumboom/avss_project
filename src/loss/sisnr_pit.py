@@ -79,7 +79,7 @@ class SiSNR_PIT(nn.Module):
         best_perm = si_snr_pit.indices.reshape(-1, 1, 1)
 
         return {
-            "loss": -si_snr_pit.values.sum(),
+            "loss": -si_snr_pit.values.mean(),
             "pred_audio_s1": torch.where(best_perm == 0, pred_audio_s1, pred_audio_s2),
             "pred_audio_s2": torch.where(best_perm == 0, pred_audio_s2, pred_audio_s1),
         }
