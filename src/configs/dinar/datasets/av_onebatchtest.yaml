@@ -2,6 +2,13 @@ train:
   _target_: src.datasets.AvssDataset
   name: "train"
   limit: 10
+  audio_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/audio"
+  mouths_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/mouths"
+  index_audio_path: "/home/jupyter/datasphere/project/avss_project/data"
 val:
   _target_: src.datasets.AvssDataset
+  name: "train"
   limit: 10
+  audio_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/audio"
+  mouths_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/mouths"
+  index_audio_path: "/home/jupyter/datasphere/project/avss_project/data"

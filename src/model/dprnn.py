@@ -217,8 +217,8 @@ class DPRNN(nn.Module):
 
         audio_s1, audio_s2 = self.decoder(audio_emb, audio_mask)
 
-        batch["pred_audio_s1"] = audio_s1
-        batch["pred_audio_s2"] = audio_s2
+        batch["pred_audio_s1"] = audio_s1 / audio_s1.max(-1, keepdim=True).values * 0.9
+        batch["pred_audio_s2"] = audio_s2 / audio_s1.max(-1, keepdim=True).values * 0.9
 
         return batch
 

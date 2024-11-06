@@ -22,6 +22,7 @@ class AvssDataset(BaseDataset):
         target_sr=16000, 
         audio_path=ROOT_PATH / "data" / "audio", 
         mouths_path=ROOT_PATH / "data" / "mouths",
+        index_audio_path=None,
         *args, **kwargs
     ):
         """
@@ -29,16 +30,23 @@ class AvssDataset(BaseDataset):
             name (str): partition name
         """
         self.target_sr = target_sr
-        self.audio_path = audio_path
-        self.mouths_path = mouths_path
+        self.audio_path = Path(audio_path)
+        self.mouths_path = Path(mouths_path)
 
-        index_audio_path = audio_path / name / "index.json"
+        if not index_audio_path:
+            index_audio_path = self.audio_path
+        else:
+            index_audio_path = Path(index_audio_path)
+        self.index_audio_path = index_audio_path / name
+        self.index_audio_path.mkdir(exist_ok=True, parents=True)
+            
+        self.index_audio_path /= "index.json"
 
         # each nested dataset class must have an index field that
         # contains list of dicts. Each dict contains information about
         # the object, including label, path, etc.
-        if index_audio_path.exists():
-            index = read_json(str(index_audio_path))
+        if self.index_audio_path.exists():
+            index = read_json(str(self.index_audio_path))
         else:
             index = self._create_index(name)
 
@@ -137,7 +145,7 @@ class AvssDataset(BaseDataset):
                 })
 
         # write index to disk
-        write_json(index, str(audio_data_path / "index.json"))
+        write_json(index, self.index_audio_path)
 
         return index
     

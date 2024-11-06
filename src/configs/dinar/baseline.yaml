@@ -2,17 +2,17 @@ defaults:
   - model: dprnn
   - writer: wandb
   - metrics: audio_metrics
-  - datasets: av
+  - datasets: av_onebatchtest
   - dataloader: example
   - transforms: example_only_batch
   - _self_
 optimizer:
   _target_: torch.optim.Adam
-  lr: 3e-4
+  lr: 1e-3
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.StepLR
-  gamma: 0.98
-  step_size: ${trainer.epoch_len}
+  gamma: 0.9
+  step_size: 14
 loss_function:
   _target_: src.loss.SiSNR_PIT
 trainer:
@@ -28,4 +28,4 @@ trainer:
   early_stop: ${trainer.n_epochs} # epochs for early stopping
   save_dir: "saved"
   seed: 2
-  max_grad_norm: 5.0
+  # max_grad_norm: 200.0
