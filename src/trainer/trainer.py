@@ -1,6 +1,8 @@
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
+import random
+
 
 class Trainer(BaseTrainer):
     """
@@ -83,3 +85,10 @@ class Trainer(BaseTrainer):
         self.writer.add_audio("pred_audio_s1", batch["pred_audio_s1"][0], 16000)
         self.writer.add_audio("audio_s2", batch["audio_s2"][0], 16000)
         self.writer.add_audio("pred_audio_s2", batch["pred_audio_s2"][0], 16000)
+        
+        i = random.randint(batch["audio_mix"].size(0))
+        self.writer.add_audio("audio_mix", batch["audio_mix"][i], 16000)
+        self.writer.add_audio("audio_s1", batch["audio_s1"][i], 16000)
+        self.writer.add_audio("pred_audio_s1", batch["pred_audio_s1"][i], 16000)
+        self.writer.add_audio("audio_s2", batch["audio_s2"][i], 16000)
+        self.writer.add_audio("pred_audio_s2", batch["pred_audio_s2"][i], 16000)
