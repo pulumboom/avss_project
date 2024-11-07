@@ -147,7 +147,8 @@ class Decoder(nn.Module):
                         in_channels = hidden_encoder_dim,
                         out_channels = hidden_encoder_dim,
                         kernel_size=kernel_size,
-                        padding=kernel_size // 2
+                        padding=kernel_size,
+                        stride=kernel_size
                     )
                 )
                 self.upsample.append(nn.ReLU())
@@ -157,7 +158,8 @@ class Decoder(nn.Module):
                     in_channels = hidden_encoder_dim,
                     out_channels = 1,
                     kernel_size=kernel_size,
-                    padding=kernel_size // 2
+                    padding=kernel_size,
+                    stride=kernel_size
                 )
             )
             self.upsample = nn.Sequential(*self.upsample)
