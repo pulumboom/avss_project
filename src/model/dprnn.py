@@ -118,14 +118,49 @@ class Decoder(nn.Module):
             self,
             hidden_encoder_dim, 
             kernel_size,
+            add_conv_layers = 0
         ):
         super().__init__()
-        self.upsample = nn.ConvTranspose1d(
-            in_channels=hidden_encoder_dim,
-            out_channels=1,
-            kernel_size=kernel_size,
-            stride=kernel_size // 2
-        )
+        
+        if add_conv_layers == 0:
+            self.upsample = nn.ConvTranspose1d(
+                in_channels=hidden_encoder_dim,
+                out_channels=1,
+                kernel_size=kernel_size,
+                stride=kernel_size // 2
+            )
+        
+        else:
+            self.upsample = nn.ModuleList()
+            self.upsample.append(
+                nn.ConvTranspose1d(
+                    in_channels=hidden_encoder_dim,
+                    out_channels=hidden_encoder_dim,
+                    kernel_size=kernel_size,
+                    stride=kernel_size // 2
+                )
+            )
+            
+            for _ in range(add_conv_layers - 1):
+                self.upsample.append(
+                    nn.Conv1d(
+                        in_channels = hidden_encoder_dim,
+                        out_channels = hidden_encoder_dim,
+                        kernel_size=kernel_size,
+                        padding=kernel_size // 2
+                    )
+                )
+                self.upsample.append(nn.ReLU())
+                
+            self.upsample.append(
+                nn.Conv1d(
+                    in_channels = hidden_encoder_dim,
+                    out_channels = 1,
+                    kernel_size=kernel_size,
+                    padding=kernel_size // 2
+                )
+            )
+            
 
     def forward(self, audio_emb: torch.Tensor, audio_mask: torch.Tensor, **kwargs):
         """
@@ -157,6 +192,7 @@ class DPRNN(nn.Module):
             sr=16000,
             audio_length=2,
             dprnn_blocks_n=6,
+            decoder_add_conv_layers=0
         ):
         """
         Args:
@@ -187,7 +223,7 @@ class DPRNN(nn.Module):
         #####################################################
         ##########             Decoder            ###########
         #####################################################
-        self.decoder = Decoder(hidden_encoder_dim, self.window_size)
+        self.decoder = Decoder(hidden_encoder_dim, self.window_size, decoder_add_conv_layers)
         
 
     def forward(self, audio_mix, **batch):
