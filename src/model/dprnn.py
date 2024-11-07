@@ -148,8 +148,6 @@ class Decoder(nn.Module):
                         in_channels = hidden_encoder_dim,
                         out_channels = hidden_encoder_dim,
                         kernel_size=kernel_size,
-                        padding=kernel_size,
-                        stride=kernel_size
                     )
                 )
                 self.upsample.append(nn.ReLU())
@@ -160,8 +158,6 @@ class Decoder(nn.Module):
                     in_channels = hidden_encoder_dim,
                     out_channels = 1,
                     kernel_size=kernel_size,
-                    padding=kernel_size,
-                    stride=kernel_size
                 )
             )
             self.upsample = nn.Sequential(*self.upsample)
@@ -181,7 +177,8 @@ class Decoder(nn.Module):
 
         print(audio_s1.shape)
         audio_s1 = self.upsample(audio_s1)
-        audio_s2 = self.upsample(audio_s2)     
+        audio_s2 = self.upsample(audio_s2)  
+        print(audio_s1.shape, audio_s2.shape)
         
         return audio_s1, audio_s2
 
