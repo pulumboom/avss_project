@@ -142,7 +142,7 @@ class Decoder(nn.Module):
             )
             
             for _ in range(add_conv_layers - 1):
-                self.upsample.append(nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1))
+                self.upsample.append(nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1)))
                 self.upsample.append(
                     nn.Conv1d(
                         in_channels = hidden_encoder_dim,
@@ -154,7 +154,7 @@ class Decoder(nn.Module):
                 )
                 self.upsample.append(nn.ReLU())
                 
-            self.upsample.append(nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1))
+            self.upsample.append(nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1)))
             self.upsample.append(
                 nn.Conv1d(
                     in_channels = hidden_encoder_dim,
