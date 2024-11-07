@@ -86,7 +86,7 @@ class Trainer(BaseTrainer):
         self.writer.add_audio("audio_s2", batch["audio_s2"][0], 16000)
         self.writer.add_audio("pred_audio_s2", batch["pred_audio_s2"][0], 16000)
         
-        i = random.randint(0, batch["audio_mix"].size(0))
+        i = random.randint(0, batch["audio_mix"].size(0) - 1)
         self.writer.add_audio("audio_mix", batch["audio_mix"][i], 16000)
         self.writer.add_audio("audio_s1", batch["audio_s1"][i], 16000)
         self.writer.add_audio("pred_audio_s1", batch["pred_audio_s1"][i], 16000)
