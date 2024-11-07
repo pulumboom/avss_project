@@ -131,7 +131,7 @@ class Decoder(nn.Module):
             )
         
         else:
-            self.upsample = nn.ModuleList()
+            self.upsample = []
             self.upsample.append(
                 nn.ConvTranspose1d(
                     in_channels=hidden_encoder_dim,
@@ -160,6 +160,7 @@ class Decoder(nn.Module):
                     padding=kernel_size // 2
                 )
             )
+            self.upsample = nn.Sequential(*self.upsample)
             
 
     def forward(self, audio_emb: torch.Tensor, audio_mask: torch.Tensor, **kwargs):
