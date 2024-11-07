@@ -142,6 +142,7 @@ class Decoder(nn.Module):
             )
             
             for _ in range(add_conv_layers - 1):
+                self.upsample.append(nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1))
                 self.upsample.append(
                     nn.Conv1d(
                         in_channels = hidden_encoder_dim,
@@ -153,6 +154,7 @@ class Decoder(nn.Module):
                 )
                 self.upsample.append(nn.ReLU())
                 
+            self.upsample.append(nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1))
             self.upsample.append(
                 nn.Conv1d(
                     in_channels = hidden_encoder_dim,
@@ -177,6 +179,7 @@ class Decoder(nn.Module):
         audio_s1 = audio_emb * audio_mask
         audio_s2 = audio_emb * (1 - audio_mask)
 
+        print(audio_s1.shape)
         audio_s1 = self.upsample(audio_s1)
         audio_s2 = self.upsample(audio_s2)     
         
