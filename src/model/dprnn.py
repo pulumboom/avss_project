@@ -65,7 +65,6 @@ class DPRNNBlock(nn.Module):
         part1_block = self.part1_lin(part1_block)
         if self.part1_act:
             part1_block = self.part1_act(part1_block)
-        print(part1_block.shape)
         part1_block = self.part1_ln(part1_block)
         part1_block = part1_block + input_block
 
@@ -77,7 +76,6 @@ class DPRNNBlock(nn.Module):
         part2_block = self.part2_lin(part2_block)
         if self.part2_act:
             part2_block = self.part2_act(part2_block)
-        print(part2_block.shape)
         part2_block = self.part2_ln(part2_block)
         part2_block = part2_block + part1_block
 
