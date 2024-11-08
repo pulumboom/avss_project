@@ -13,6 +13,7 @@ class DPRNNBlock(nn.Module):
             self, 
             rnn_block,
             non_linearity,
+            normalization_layer="layer",
             chunk_size=64,
             n_chunks=63,
             hidden_size=128,
@@ -31,18 +32,30 @@ class DPRNNBlock(nn.Module):
             pass
         elif non_linearity.lower() == "relu":
             non_linearity = nn.ReLU
+        elif non_linearity.lower() == "gelu":
+            non_linearity = nn.GELU
         else:
             raise Exception()
-
+            
         self.part1_rnn = rnn_block(n_chunks, hidden_size=hidden_size, bidirectional=True, batch_first=True)
         self.part1_lin = nn.Linear(hidden_size * 2, n_chunks)
         self.part1_act = non_linearity() if non_linearity is not None else None
-        self.part1_ln = nn.LayerNorm([n_features * chunk_size, n_chunks])
+        if normalization_layer.lower() == "layer":
+            self.part1_ln = nn.LayerNorm([n_features * chunk_size, n_chunks])
+        elif normalization_layer.lower() == "batch":
+            self.part1_ln = nn.BatchNorm1d(n_chunks)
+        else:
+            raise Exception()
 
         self.part2_rnn = rnn_block(chunk_size, hidden_size=hidden_size, bidirectional=True, batch_first=True)
         self.part2_lin = nn.Linear(hidden_size * 2, chunk_size)
         self.part2_act = non_linearity() if non_linearity is not None else None
-        self.part2_ln = nn.LayerNorm([n_features * n_chunks, chunk_size])
+        if normalization_layer.lower() == "layer":
+            self.part2_ln = nn.LayerNorm([n_features * n_chunks, chunk_size])
+        elif normalization_layer.lower() == "batch":
+            self.part2_ln = nn.BatchNorm1d(chunk_size)
+        else:
+            raise Exception()
 
 
     def forward(self, input_block, **kwargs):
@@ -151,6 +164,7 @@ class Decoder(nn.Module):
                     )
                 )
                 self.upsample.append(nn.ReLU())
+                self.upsample.append(nn.BatchNorm1d(hidden_encoder_dim))
                 
             self.upsample.append(nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1)))
             self.upsample.append(
@@ -175,10 +189,8 @@ class Decoder(nn.Module):
         audio_s1 = audio_emb * audio_mask
         audio_s2 = audio_emb * (1 - audio_mask)
 
-        print(audio_s1.shape)
         audio_s1 = self.upsample(audio_s1)
         audio_s2 = self.upsample(audio_s2)  
-        print(audio_s1.shape, audio_s2.shape)
         
         return audio_s1, audio_s2
 
@@ -196,6 +208,7 @@ class DPRNN(nn.Module):
             audio_length=2,
             dprnn_blocks_n=6,
             decoder_add_conv_layers=0
+            dprnn_normalization_layer="layer"
         ):
         """
         Args:
@@ -219,14 +232,23 @@ class DPRNN(nn.Module):
         self.pad = pad
         self.chunk_size = chunk_size
         self.separator = nn.Sequential(*[
-            DPRNNBlock(rnn_block, non_linearity, chunk_size=chunk_size, n_features=hidden_encoder_dim)
+            DPRNNBlock(
+                rnn_block, 
+                non_linearity, 
+                chunk_size=chunk_size, 
+                n_features=hidden_encoder_dim, 
+                normalization_layer=dprnn_normalization_layer)
             for _ in range(dprnn_blocks_n)
         ])
 
         #####################################################
         ##########             Decoder            ###########
         #####################################################
-        self.decoder = Decoder(hidden_encoder_dim, self.window_size, decoder_add_conv_layers)
+        self.decoder = Decoder(
+            hidden_encoder_dim, 
+            self.window_size, 
+            decoder_add_conv_layers,
+        )
         
 
     def forward(self, audio_mix, **batch):
