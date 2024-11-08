@@ -207,7 +207,7 @@ class DPRNN(nn.Module):
             sr=16000,
             audio_length=2,
             dprnn_blocks_n=6,
-            decoder_add_conv_layers=0
+            decoder_add_conv_layers=0,
             dprnn_normalization_layer="layer"
         ):
         """
