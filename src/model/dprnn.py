@@ -43,7 +43,7 @@ class DPRNNBlock(nn.Module):
         if normalization_layer.lower() == "layer":
             self.part1_ln = nn.LayerNorm([n_features * chunk_size, n_chunks])
         elif normalization_layer.lower() == "batch":
-            self.part1_ln = nn.BatchNorm1d(n_chunks)
+            self.part1_ln = nn.BatchNorm1d(n_features * chunk_size)
         else:
             raise Exception()
 
@@ -53,7 +53,7 @@ class DPRNNBlock(nn.Module):
         if normalization_layer.lower() == "layer":
             self.part2_ln = nn.LayerNorm([n_features * n_chunks, chunk_size])
         elif normalization_layer.lower() == "batch":
-            self.part2_ln = nn.BatchNorm1d(chunk_size)
+            self.part2_ln = nn.BatchNorm1d(n_features * n_chunks)
         else:
             raise Exception()
 
@@ -65,6 +65,7 @@ class DPRNNBlock(nn.Module):
         part1_block = self.part1_lin(part1_block)
         if self.part1_act:
             part1_block = self.part1_act(part1_block)
+        print(part1_block.shape)
         part1_block = self.part1_ln(part1_block)
         part1_block = part1_block + input_block
 
@@ -76,6 +77,7 @@ class DPRNNBlock(nn.Module):
         part2_block = self.part2_lin(part2_block)
         if self.part2_act:
             part2_block = self.part2_act(part2_block)
+        print(part2_block.shape)
         part2_block = self.part2_ln(part2_block)
         part2_block = part2_block + part1_block
 
