@@ -3,16 +3,19 @@ train:
   name: "train"
   audio_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/audio"
   mouths_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/mouths"
+  index_audio_path: "/home/jupyter/datasphere/project/avss_project/data"
   # instance_transforms: ${transforms.instance_transforms.train}
 val:
   _target_: src.datasets.AvssDataset
   name: "val"
   audio_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/audio"
   mouths_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/mouths"
+  index_audio_path: "/home/jupyter/datasphere/project/avss_project/data"
   # instance_transforms: ${transforms.instance_transforms.inference}
-test:
-  _target_: src.datasets.AvssDataset
-  name: "test"
-  audio_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/audio"
-  mouths_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/mouths"
+# test:
+#   _target_: src.datasets.AvssDataset
+#   name: "test"
+#   audio_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/audio"
+#   mouths_path: "/home/jupyter/mnt/datasets/avss_dataset/dla_dataset/mouths"
+#   index_audio_path: "/home/jupyter/datasphere/project/avss_project/data"
   # instance_transforms: ${transforms.instance_transforms.inference}
