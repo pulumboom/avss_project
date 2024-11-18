@@ -1,12 +1,14 @@
-import torch
 import torch.nn.functional as F
 from torch import nn
-from torch.nn import Sequential
+
+######################################################
+## Inspired by https://arxiv.org/pdf/1809.07454
+######################################################
 
 
 class Conv1DBlock(nn.Module):
     """
-    1-D Conv Block for ConvTasNet with residual and skip connections.
+    1-D Conv Block
     """
 
     def __init__(self, in_channels, bottleneck_channels, kernel_size, dilation):
@@ -18,11 +20,16 @@ class Conv1DBlock(nn.Module):
             dilation (int): Dilation factor.
         """
         super().__init__()
-        self.bottleneck_conv = nn.Conv1d(in_channels, bottleneck_channels, kernel_size=1)
+        self.bottleneck_conv = nn.Conv1d(
+            in_channels, bottleneck_channels, kernel_size=1
+        )
         self.depthwise_conv = nn.Conv1d(
-            bottleneck_channels, bottleneck_channels, kernel_size,
-            groups=bottleneck_channels, dilation=dilation,
-            padding=(kernel_size - 1) * dilation // 2  # Maintain sequence length
+            bottleneck_channels,
+            bottleneck_channels,
+            kernel_size,
+            groups=bottleneck_channels,
+            dilation=dilation,
+            padding=(kernel_size - 1) * dilation // 2,
         )
         self.residual_conv = nn.Conv1d(bottleneck_channels, in_channels, kernel_size=1)
         self.skip_conv = nn.Conv1d(bottleneck_channels, in_channels, kernel_size=1)
@@ -51,19 +58,21 @@ class Conv1DBlock(nn.Module):
 
 class Encoder(nn.Module):
     """
-    Encoder for ConvTasNet: Converts waveform into feature representation.
+    Encoder for ConvTasNet: Converts waveform into embedding.
     """
 
     def __init__(self, input_channels, output_channels, kernel_size, stride):
         """
         Args:
-            input_channels (int): Number of input channels (e.g., 1 for mono audio).
-            output_channels (int): Number of output channels (N in the paper).
+            input_channels (int): Number of input channels.
+            output_channels (int): Number of output channels.
             kernel_size (int): Kernel size for convolution.
             stride (int): Stride for convolution.
         """
         super().__init__()
-        self.conv = nn.Conv1d(input_channels, output_channels, kernel_size, stride=stride)
+        self.conv = nn.Conv1d(
+            input_channels, output_channels, kernel_size, stride=stride
+        )
 
     def forward(self, x):
         """
@@ -73,7 +82,7 @@ class Encoder(nn.Module):
         Returns:
             Tensor: Encoded features [B, N, T'].
         """
-        return self.conv(x)  # ReLU is applied to the encoded features
+        return self.conv(x)
 
 
 class Separator(nn.Module):
@@ -81,10 +90,12 @@ class Separator(nn.Module):
     Separator for ConvTasNet: Generates masks for each source.
     """
 
-    def __init__(self, input_channels, bottleneck_channels, n_blocks, kernel_size, n_sources):
+    def __init__(
+        self, input_channels, bottleneck_channels, n_blocks, kernel_size, n_sources
+    ):
         """
         Args:
-            input_channels (int): Number of input channels (N from Encoder).
+            input_channels (int): Number of input channels.
             bottleneck_channels (int): Bottleneck size for Conv1D blocks.
             n_blocks (int): Number of Conv1D blocks in the separator.
             kernel_size (int): Kernel size for depthwise convolutions.
@@ -94,10 +105,14 @@ class Separator(nn.Module):
         self.blocks = nn.ModuleList()
         dilation = 1
         for _ in range(n_blocks):
-            self.blocks.append(Conv1DBlock(input_channels, bottleneck_channels, kernel_size, dilation))
-            dilation *= 2  # Dilation increases exponentially
+            self.blocks.append(
+                Conv1DBlock(input_channels, bottleneck_channels, kernel_size, dilation)
+            )
+            dilation *= 2
 
-        self.mask_conv = nn.Conv1d(input_channels, n_sources * input_channels, kernel_size=1)
+        self.mask_conv = nn.Conv1d(
+            input_channels, n_sources * input_channels, kernel_size=1
+        )
 
         self.norm = nn.BatchNorm1d(input_channels)
         self.conv = nn.Conv1d(input_channels, input_channels, kernel_size=1)
@@ -115,28 +130,29 @@ class Separator(nn.Module):
         x = self.norm(x)
         x = self.conv(x)
 
-
         skip_connections = []
         for block in self.blocks:
             x, skip = block(x)
             skip_connections.append(skip)
 
-        skip_sum = sum(skip_connections)  # Aggregate skip connections
+        skip_sum = sum(skip_connections)
         masks = self.prelu(skip_sum)
         masks = self.mask_conv(masks)  # [B, n_sources * N, T']
-        masks = masks.view(masks.size(0), -1, x.size(1), x.size(2))  # [B, n_sources, N, T']
-        return F.softmax(masks, dim=1)  # Softmax over sources
+        masks = masks.view(
+            masks.size(0), -1, x.size(1), x.size(2)
+        )  # [B, n_sources, N, T']
+        return F.softmax(masks, dim=1)
 
 
 class Decoder(nn.Module):
     """
-    Decoder for ConvTasNet: Converts separated features back to waveforms.
+    Decoder for ConvTasNet: Converts embeddings to waveforms.
     """
 
     def __init__(self, input_channels, kernel_size, stride):
         """
         Args:
-            input_channels (int): Number of input channels (N from Encoder).
+            input_channels (int): Number of input channels.
             kernel_size (int): Kernel size for transposed convolution.
             stride (int): Stride for transposed convolution.
         """
@@ -168,59 +184,22 @@ class ConvTasNet(nn.Module):
     def forward(self, audio_mix, **batch):
         """
         Args:
-            audio_mix (Tensor): Input waveform [B, 1, T].
+            mixture (Tensor): Input waveform [B, 1, T].
 
         Returns:
-            Dict: Separated waveforms with keys "pred_audio_s1" and "pred_audio_s2".
+            Tensor: Separated waveforms [B, n_sources, T].
         """
-        # Параметры сегментации
-        L = self.encoder.conv.kernel_size[0]  # Длина окна (из kernel_size Encoder)
-        stride = self.encoder.conv.stride[0]  # Шаг между окнами (из stride Encoder)
+        encoded = self.encoder(audio_mix)  # [B, N, T']
+        masks = self.separator(encoded)  # [B, n_sources, N, T']
+        separated = masks * encoded.unsqueeze(1)
 
-        # Параметры сигнала
-        B, _, T = audio_mix.shape
-        padded_length = (T - L) % stride  # Выравниваем длину для сегментации
-        if padded_length > 0:
-            audio_mix = F.pad(audio_mix, (0, stride - padded_length))  # Padding до ближайшего stride
-        T_padded = audio_mix.shape[-1]
+        audio_s1 = self.decoder(separated[:, 0])
+        audio_s2 = self.decoder(separated[:, 1])
 
-        # 1. Разделение сигнала на перекрывающиеся отрезки
-        separated_audio_s1 = torch.zeros(B, T_padded, device=audio_mix.device)
-        separated_audio_s2 = torch.zeros(B, T_padded, device=audio_mix.device)
-        overlap_count = torch.zeros(T_padded, device=audio_mix.device)  # Счётчик перекрытий для нормализации
-
-        for start in range(0, T_padded - L + 1, stride):
-            print(f"start: {start} of {T_padded - L + 1}")
-            # Извлекаем текущий отрезок
-            segment = audio_mix[:, :, start:start + L]  # [B, 1, L]
-
-            # 2. Обработка отрезка
-            encoded = self.encoder(segment)  # [B, N, T']
-            masks = self.separator(encoded)  # [B, n_sources, N, T']
-            separated = masks * encoded.unsqueeze(1)  # [B, n_sources, N, T']
-
-            audio_s1 = self.decoder(separated[:, 0])  # [B, 1, L]
-            audio_s2 = self.decoder(separated[:, 1])  # [B, 1, L]
-
-            # 3. Накладываем результат с учётом перекрытия
-            separated_audio_s1[:, start:start + L] += audio_s1.squeeze(1)  # [B, T_padded]
-            separated_audio_s2[:, start:start + L] += audio_s2.squeeze(1)  # [B, T_padded]
-            overlap_count[start:start + L] += 1  # [T_padded]
-
-        # 4. Нормализация перекрытий
-        separated_audio_s1 /= overlap_count.unsqueeze(0)  # [B, T_padded]
-        separated_audio_s2 /= overlap_count.unsqueeze(0)  # [B, T_padded]
-
-        # 5. Обрезка до исходной длины
-        separated_audio_s1 = separated_audio_s1[:, :T]
-        separated_audio_s2 = separated_audio_s2[:, :T]
-
-        # Нормализация
-        batch["pred_audio_s1"] = separated_audio_s1 / separated_audio_s1.max(-1, keepdim=True).values * 0.9
-        batch["pred_audio_s2"] = separated_audio_s2 / separated_audio_s2.max(-1, keepdim=True).values * 0.9
+        batch["pred_audio_s1"] = audio_s1 / audio_s1.max(-1, keepdim=True).values * 0.9
+        batch["pred_audio_s2"] = audio_s2 / audio_s1.max(-1, keepdim=True).values * 0.9
 
         return batch
-
 
     def __str__(self):
         """

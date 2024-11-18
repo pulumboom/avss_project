@@ -2,18 +2,18 @@ _target_: src.model.ConvTasNet
 
 encoder_params:
   input_channels: 1
+  kernel_size: 32
   output_channels: 512
-  kernel_size: 64
-  stride: 32
+  stride: 16
 
 separator_params:
-    input_channels: 512
-    bottleneck_channels: 128
-    n_blocks: 8
-    kernel_size: 3
-    n_sources: 2
+  bottleneck_channels: 128
+  input_channels: 512
+  kernel_size: 3
+  n_blocks: 8
+  n_sources: 2
 
 decoder_params:
-    input_channels: 512
-    kernel_size: 64
-    stride: 32
+  input_channels: 512
+  kernel_size: 32
+  stride: 16
