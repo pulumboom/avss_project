@@ -1,9 +1,24 @@
 import torch.nn.functional as F
 from torch import nn
+import torch
 
 ######################################################
 ## Inspired by https://arxiv.org/pdf/1809.07454
 ######################################################
+
+
+class GlobalLayerNorm(nn.Module):
+    def __init__(self, num_channels):
+        super().__init__()
+        self.gamma = nn.Parameter(torch.ones(1, num_channels, 1))
+        self.beta = nn.Parameter(torch.zeros(1, num_channels, 1))
+
+    def forward(self, x):
+        # x shape: [B, num_channels, T]
+        mean = x.mean(dim=(2), keepdim=True)  # [B, num_channels, 1]
+        std = x.std(dim=(2), keepdim=True)    # [B, num_channels, 1]
+
+        return self.gamma * (x - mean) / (std + 1e-5) + self.beta
 
 
 class Conv1DBlock(nn.Module):
@@ -35,7 +50,7 @@ class Conv1DBlock(nn.Module):
         self.skip_conv = nn.Conv1d(bottleneck_channels, in_channels, kernel_size=1)
 
         self.prelu = nn.PReLU()
-        self.norm = nn.BatchNorm1d(bottleneck_channels)
+        self.norm = GlobalLayerNorm(bottleneck_channels)
 
     def forward(self, x):
         """
@@ -46,13 +61,18 @@ class Conv1DBlock(nn.Module):
             Tuple[Tensor, Tensor]: Residual and skip outputs.
         """
         out = self.bottleneck_conv(x)  # [B, bottleneck_channels, T]
-        out = self.prelu(out)
+
         out = self.norm(out)
+        out = self.prelu(out)
+
         out = self.depthwise_conv(out)  # [B, bottleneck_channels, T]
-        out = self.prelu(out)
+
         out = self.norm(out)
+        out = self.prelu(out)
+
         residual = self.residual_conv(out)  # [B, in_channels, T]
         skip = self.skip_conv(out)  # [B, in_channels, T]
+
         return x + residual, skip
 
 
@@ -82,7 +102,7 @@ class Encoder(nn.Module):
         Returns:
             Tensor: Encoded features [B, N, T'].
         """
-        return self.conv(x)
+        return F.relu(self.conv(x))
 
 
 class Separator(nn.Module):
@@ -91,7 +111,7 @@ class Separator(nn.Module):
     """
 
     def __init__(
-        self, input_channels, bottleneck_channels, n_blocks, kernel_size, n_sources
+            self, input_channels, bottleneck_channels, n_blocks, kernel_size, n_sources
     ):
         """
         Args:
@@ -114,8 +134,11 @@ class Separator(nn.Module):
             input_channels, n_sources * input_channels, kernel_size=1
         )
 
-        self.norm = nn.BatchNorm1d(input_channels)
+        self.output_conv = nn.Conv1d(input_channels, input_channels, kernel_size=1)
+
         self.conv = nn.Conv1d(input_channels, input_channels, kernel_size=1)
+
+        self.norm = GlobalLayerNorm(input_channels)
         self.prelu = nn.PReLU()
 
     def forward(self, x):
@@ -136,12 +159,14 @@ class Separator(nn.Module):
             skip_connections.append(skip)
 
         skip_sum = sum(skip_connections)
-        masks = self.prelu(skip_sum)
-        masks = self.mask_conv(masks)  # [B, n_sources * N, T']
+        skip_sum = self.prelu(skip_sum)
+        skip_sum = self.output_conv(skip_sum)
+
+        masks = self.mask_conv(skip_sum)  # [B, n_sources * N, T']
         masks = masks.view(
             masks.size(0), -1, x.size(1), x.size(2)
         )  # [B, n_sources, N, T']
-        return F.softmax(masks, dim=1)
+        return F.sigmoid(masks)
 
 
 class Decoder(nn.Module):
@@ -197,7 +222,7 @@ class ConvTasNet(nn.Module):
         audio_s2 = self.decoder(separated[:, 1])
 
         batch["pred_audio_s1"] = audio_s1 / audio_s1.max(-1, keepdim=True).values * 0.9
-        batch["pred_audio_s2"] = audio_s2 / audio_s1.max(-1, keepdim=True).values * 0.9
+        batch["pred_audio_s2"] = audio_s2 / audio_s2.max(-1, keepdim=True).values * 0.9
 
         return batch
 
