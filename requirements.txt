@@ -17,3 +17,4 @@ pre-commit
 pystoi
 pesq
 fast-bss-eval
+wget
