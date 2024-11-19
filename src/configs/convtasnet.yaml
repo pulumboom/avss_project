@@ -8,13 +8,13 @@ defaults:
   - _self_
 optimizer:
   _target_: torch.optim.Adam
-  lr: 3e-4
+  lr: 1e-4
+  weight_decay: 1e-6
 lr_scheduler:
-  _target_: torch.optim.lr_scheduler.StepLR
-  gamma: 0.9
-  step_size: 400
-  # _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-  # T_max: 5000
+  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  mode: "min"
+  factor: 0.5
+  patience: 5
 loss_function:
   _target_: src.loss.SiSNR_PIT
 trainer:

@@ -49,8 +49,10 @@ class Conv1DBlock(nn.Module):
         self.residual_conv = nn.Conv1d(bottleneck_channels, in_channels, kernel_size=1)
         self.skip_conv = nn.Conv1d(bottleneck_channels, in_channels, kernel_size=1)
 
-        self.prelu = nn.PReLU()
-        self.norm = GlobalLayerNorm(bottleneck_channels)
+        self.norm1 = GlobalLayerNorm(bottleneck_channels)
+        self.prelu1 = nn.PReLU()
+        self.norm2 = GlobalLayerNorm(bottleneck_channels)
+        self.prelu2 = nn.PReLU()
 
     def forward(self, x):
         """
@@ -62,13 +64,13 @@ class Conv1DBlock(nn.Module):
         """
         out = self.bottleneck_conv(x)  # [B, bottleneck_channels, T]
 
-        out = self.norm(out)
-        out = self.prelu(out)
+        out = self.norm1(out)
+        out = self.prelu1(out)
 
         out = self.depthwise_conv(out)  # [B, bottleneck_channels, T]
 
-        out = self.norm(out)
-        out = self.prelu(out)
+        out = self.norm2(out)
+        out = self.prelu2(out)
 
         residual = self.residual_conv(out)  # [B, in_channels, T]
         skip = self.skip_conv(out)  # [B, in_channels, T]
@@ -91,7 +93,11 @@ class Encoder(nn.Module):
         """
         super().__init__()
         self.conv = nn.Conv1d(
-            input_channels, output_channels, kernel_size, stride=stride
+            input_channels,
+            output_channels,
+            kernel_size,
+            stride=stride,
+            padding=(kernel_size - stride) // 2,
         )
 
     def forward(self, x):
@@ -166,7 +172,7 @@ class Separator(nn.Module):
         masks = masks.view(
             masks.size(0), -1, x.size(1), x.size(2)
         )  # [B, n_sources, N, T']
-        return F.sigmoid(masks)
+        return torch.sigmoid(masks)
 
 
 class Decoder(nn.Module):
@@ -182,7 +188,13 @@ class Decoder(nn.Module):
             stride (int): Stride for transposed convolution.
         """
         super().__init__()
-        self.deconv = nn.ConvTranspose1d(input_channels, 1, kernel_size, stride=stride)
+        self.deconv = nn.ConvTranspose1d(
+            input_channels,
+            1,
+            kernel_size,
+            stride=stride,
+            padding=(kernel_size - stride) // 2,
+        )
 
     def forward(self, x):
         """
