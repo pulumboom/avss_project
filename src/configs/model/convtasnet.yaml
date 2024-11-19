@@ -12,6 +12,7 @@ separator_params:
   kernel_size: 3
   n_blocks: 8
   n_sources: 2
+  n_repeats: 3
 
 decoder_params:
   input_channels: 512

@@ -117,7 +117,7 @@ class Separator(nn.Module):
     """
 
     def __init__(
-            self, input_channels, bottleneck_channels, n_blocks, kernel_size, n_sources
+            self, input_channels, n_repeats, bottleneck_channels, n_blocks, kernel_size, n_sources
     ):
         """
         Args:
@@ -129,12 +129,12 @@ class Separator(nn.Module):
         """
         super().__init__()
         self.blocks = nn.ModuleList()
-        dilation = 1
-        for _ in range(n_blocks):
-            self.blocks.append(
-                Conv1DBlock(input_channels, bottleneck_channels, kernel_size, dilation)
-            )
-            dilation *= 2
+        for _ in range(n_repeats):
+            for i in range(n_blocks):
+                dilation = 2 ** i
+                self.blocks.append(
+                    Conv1DBlock(input_channels, bottleneck_channels, kernel_size, dilation)
+                )
 
         self.mask_conv = nn.Conv1d(
             input_channels, n_sources * input_channels, kernel_size=1
