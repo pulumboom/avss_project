@@ -19,3 +19,4 @@ pesq
 fast-bss-eval
 
 soundfile
+wget

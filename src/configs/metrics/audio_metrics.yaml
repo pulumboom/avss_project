@@ -2,11 +2,11 @@ device: "auto"
 train: # metrics that are calculated during training
   - _target_: src.metrics.SI_SNRi
     device: ${metrics.device}
-    name: "TRAIN_SI-SNRi"
+    name: "SI-SNRi"
 inference: # metrics that are calculated during inference (eval)
   - _target_: src.metrics.SI_SNRi
     device: ${metrics.device}
-    name: "VAL_SI-SNRi"
+    name: "SI-SNRi"
   # - _target_: src.metrics.STOI # supports only cpu (t.w. only inference)
   #   device: ${metrics.device}
   #   name: "VAL_STOI"
@@ -15,4 +15,4 @@ inference: # metrics that are calculated during inference (eval)
   #   name: "VAL_PESQ"
   - _target_: src.metrics.SDRi
     device: ${metrics.device}
-    name: "VAL_SDRi"
+    name: "SDRi"

@@ -1,6 +1,6 @@
 _target_: src.model.DPRNN
 rnn_block: "LSTM"
-dprnn_blocks_n: 6
+dprnn_blocks_n: 8
 decoder_add_conv_layers: 8
 non_linearity: "gelu"
 dprnn_normalization_layer: "batch"

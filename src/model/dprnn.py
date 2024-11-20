@@ -24,6 +24,8 @@ class DPRNNBlock(nn.Module):
             rnn_block = nn.RNN
         elif rnn_block.lower() == "lstm":
             rnn_block = nn.LSTM
+        elif rnn_block.lower() == "gru":
+            rnn_block = nn.GRU
         else:
             raise Exception()
 
