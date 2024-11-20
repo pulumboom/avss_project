@@ -13,7 +13,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 torch.autograd.set_detect_anomaly(True)
 
-@hydra.main(version_base=None, config_path="src/configs/dinar", config_name="baseline")
+
+@hydra.main(version_base=None, config_path="src/configs", config_name="baseline")
 def main(config):
     """
     Main script for training. Instantiates the model, optimizer, scheduler,

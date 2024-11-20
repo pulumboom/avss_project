@@ -1,5 +1,5 @@
 torch==2.2.0
-torchaudio
+torchaudio==2.2.0
 torchvision==0.17.0
 torchmetrics
 numpy==1.26.4
@@ -17,4 +17,6 @@ pre-commit
 pystoi
 pesq
 fast-bss-eval
+
+soundfile
 wget

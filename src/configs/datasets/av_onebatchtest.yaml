@@ -1,0 +1,14 @@
+train:
+  _target_: src.datasets.AvssDataset
+  name: "train"
+  limit: 5
+  audio_path: "/home/georgii/Downloads/dla_dataset/audio"
+  mouths_path: "/home/georgii/Downloads/dla_dataset/mouths"
+  index_audio_path: "/home/georgii/Downloads/dla_dataset/data"
+val:
+  _target_: src.datasets.AvssDataset
+  name: "train"
+  limit: 5
+  audio_path: "/home/georgii/Downloads/dla_dataset/audio"
+  mouths_path: "/home/georgii/Downloads/dla_dataset/mouths"
+  index_audio_path: "/home/georgii/Downloads/dla_dataset/data"

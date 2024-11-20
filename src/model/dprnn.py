@@ -1,6 +1,6 @@
-from torch import nn
-import torch.nn.functional as F
 import torch
+import torch.nn.functional as F
+from torch import nn
 
 ######################################################
 ## Inspired by https://github.com/kaituoxu/Conv-TasNet
@@ -8,17 +8,16 @@ import torch
 
 
 class DPRNNBlock(nn.Module):
-
     def __init__(
-            self, 
-            rnn_block,
-            non_linearity,
-            normalization_layer="layer",
-            chunk_size=64,
-            n_chunks=63,
-            hidden_size=128,
-            n_features=512,
-        ):
+        self,
+        rnn_block,
+        non_linearity,
+        normalization_layer="layer",
+        chunk_size=64,
+        n_chunks=63,
+        hidden_size=128,
+        n_features=512,
+    ):
         super().__init__()
 
         if rnn_block.lower() == "rnn":
@@ -38,8 +37,10 @@ class DPRNNBlock(nn.Module):
             non_linearity = nn.GELU
         else:
             raise Exception()
-            
-        self.part1_rnn = rnn_block(n_chunks, hidden_size=hidden_size, bidirectional=True, batch_first=True)
+
+        self.part1_rnn = rnn_block(
+            n_chunks, hidden_size=hidden_size, bidirectional=True, batch_first=True
+        )
         self.part1_lin = nn.Linear(hidden_size * 2, n_chunks)
         self.part1_act = non_linearity() if non_linearity is not None else None
         if normalization_layer.lower() == "layer":
@@ -49,7 +50,9 @@ class DPRNNBlock(nn.Module):
         else:
             raise Exception()
 
-        self.part2_rnn = rnn_block(chunk_size, hidden_size=hidden_size, bidirectional=True, batch_first=True)
+        self.part2_rnn = rnn_block(
+            chunk_size, hidden_size=hidden_size, bidirectional=True, batch_first=True
+        )
         self.part2_lin = nn.Linear(hidden_size * 2, chunk_size)
         self.part2_act = non_linearity() if non_linearity is not None else None
         if normalization_layer.lower() == "layer":
@@ -59,11 +62,10 @@ class DPRNNBlock(nn.Module):
         else:
             raise Exception()
 
-
     def forward(self, input_block, **kwargs):
         batch_size, n_features, chunk_size, n_chunks = input_block.shape
         input_block = input_block.reshape(batch_size, n_features * chunk_size, n_chunks)
-        part1_block, _= self.part1_rnn(input_block)
+        part1_block, _ = self.part1_rnn(input_block)
         part1_block = self.part1_lin(part1_block)
         if self.part1_act:
             part1_block = self.part1_act(part1_block)
@@ -88,13 +90,13 @@ class DPRNNBlock(nn.Module):
 
 class Encoder(nn.Module):
     def __init__(
-            self, 
-            hidden_encoder_dim, 
-            kernel_size, 
-            norm=None,
-            sample_rate=16000,
-            audio_length=2,
-        ):
+        self,
+        hidden_encoder_dim,
+        kernel_size,
+        norm=None,
+        sample_rate=16000,
+        audio_length=2,
+    ):
         super().__init__()
 
         self.conv = nn.Conv1d(
@@ -102,21 +104,22 @@ class Encoder(nn.Module):
             out_channels=hidden_encoder_dim,
             kernel_size=kernel_size,
             stride=kernel_size // 2,
-            bias=False
+            bias=False,
         )
 
         self.norm = None
         if norm == "batch":
             self.norm = nn.BatchNorm1d(hidden_encoder_dim)
         elif norm == "layer":
-            self.norm = nn.LayerNorm([hidden_encoder_dim, 2 * sample_rate * audio_length // kernel_size - 1])
-
+            self.norm = nn.LayerNorm(
+                [hidden_encoder_dim, 2 * sample_rate * audio_length // kernel_size - 1]
+            )
 
     def forward(self, audio_mix, **kwargs):
         """
         Args:
             audio_mix: [batch_size, 1, audio_length * sample_rate]
-        
+
         Return:
             audio_emb: [batch_size, hidden_encoder_dim, K], K = 2 * audio_length * sample_rate / kernel_size - 1
         """
@@ -126,25 +129,20 @@ class Encoder(nn.Module):
             emb = self.norm(emb)
 
         return F.relu(emb)
-    
+
 
 class Decoder(nn.Module):
-    def __init__(
-            self,
-            hidden_encoder_dim, 
-            kernel_size,
-            add_conv_layers = 0
-        ):
+    def __init__(self, hidden_encoder_dim, kernel_size, add_conv_layers=0):
         super().__init__()
-        
+
         if add_conv_layers == 0:
             self.upsample = nn.ConvTranspose1d(
                 in_channels=hidden_encoder_dim,
                 out_channels=1,
                 kernel_size=kernel_size,
-                stride=kernel_size // 2
+                stride=kernel_size // 2,
             )
-        
+
         else:
             self.upsample = []
             self.upsample.append(
@@ -152,32 +150,33 @@ class Decoder(nn.Module):
                     in_channels=hidden_encoder_dim,
                     out_channels=hidden_encoder_dim,
                     kernel_size=kernel_size,
-                    stride=kernel_size // 2
+                    stride=kernel_size // 2,
                 )
             )
-            
+
             for _ in range(add_conv_layers - 1):
-                self.upsample.append(nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1)))
+                self.upsample.append(
+                    nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1))
+                )
                 self.upsample.append(
                     nn.Conv1d(
-                        in_channels = hidden_encoder_dim,
-                        out_channels = hidden_encoder_dim,
+                        in_channels=hidden_encoder_dim,
+                        out_channels=hidden_encoder_dim,
                         kernel_size=kernel_size,
                     )
                 )
                 self.upsample.append(nn.ReLU())
                 self.upsample.append(nn.BatchNorm1d(hidden_encoder_dim))
-                
+
             self.upsample.append(nn.ZeroPad1d((kernel_size // 2, kernel_size // 2 - 1)))
             self.upsample.append(
                 nn.Conv1d(
-                    in_channels = hidden_encoder_dim,
-                    out_channels = 1,
+                    in_channels=hidden_encoder_dim,
+                    out_channels=1,
                     kernel_size=kernel_size,
                 )
             )
             self.upsample = nn.Sequential(*self.upsample)
-            
 
     def forward(self, audio_emb: torch.Tensor, audio_mask: torch.Tensor, **kwargs):
         """
@@ -192,26 +191,25 @@ class Decoder(nn.Module):
         audio_s2 = audio_emb * (1 - audio_mask)
 
         audio_s1 = self.upsample(audio_s1)
-        audio_s2 = self.upsample(audio_s2)  
-        
+        audio_s2 = self.upsample(audio_s2)
+
         return audio_s1, audio_s2
 
 
 class DPRNN(nn.Module):
-
     def __init__(
-            self, 
-            rnn_block="LSTM", 
-            non_linearity="relu",
-            pad=(25, 24), 
-            chunk_size=64,
-            hidden_encoder_dim=64,
-            sr=16000,
-            audio_length=2,
-            dprnn_blocks_n=6,
-            decoder_add_conv_layers=0,
-            dprnn_normalization_layer="layer"
-        ):
+        self,
+        rnn_block="LSTM",
+        non_linearity="relu",
+        pad=(25, 24),
+        chunk_size=64,
+        hidden_encoder_dim=64,
+        sr=16000,
+        audio_length=2,
+        dprnn_blocks_n=6,
+        decoder_add_conv_layers=0,
+        dprnn_normalization_layer="layer",
+    ):
         """
         Args:
             n_feats (int): number of input features.
@@ -227,55 +225,60 @@ class DPRNN(nn.Module):
         self.stride = self.window_size // 2
         self.encoder = Encoder(hidden_encoder_dim, self.window_size, "layer")
 
-
         #####################################################
         ##########             Decoder            ###########
         #####################################################
         self.pad = pad
         self.chunk_size = chunk_size
-        self.separator = nn.Sequential(*[
-            DPRNNBlock(
-                rnn_block, 
-                non_linearity, 
-                chunk_size=chunk_size, 
-                n_features=hidden_encoder_dim, 
-                normalization_layer=dprnn_normalization_layer)
-            for _ in range(dprnn_blocks_n)
-        ])
+        self.separator = nn.Sequential(
+            *[
+                DPRNNBlock(
+                    rnn_block,
+                    non_linearity,
+                    chunk_size=chunk_size,
+                    n_features=hidden_encoder_dim,
+                    normalization_layer=dprnn_normalization_layer,
+                )
+                for _ in range(dprnn_blocks_n)
+            ]
+        )
 
         #####################################################
         ##########             Decoder            ###########
         #####################################################
         self.decoder = Decoder(
-            hidden_encoder_dim, 
-            self.window_size, 
+            hidden_encoder_dim,
+            self.window_size,
             decoder_add_conv_layers,
         )
-        
 
     def forward(self, audio_mix, **batch):
         """
         Model forward method.
 
         Args:
-            data_object (Tensor): input vector.
+            audio_mix (Tensor): input vector.
         Returns:
             output (dict): output dict containing logits.
         """
         audio_emb = self.encoder(audio_mix)
 
         padded_audio_emb = F.pad(audio_emb, self.pad)
-        dprnn_input_block = padded_audio_emb.unfold(-1, self.chunk_size, self.chunk_size // 2) # [batch_size, n_features, n_chunks, chunk_size]
+        dprnn_input_block = padded_audio_emb.unfold(
+            -1, self.chunk_size, self.chunk_size // 2
+        )  # [batch_size, n_features, n_chunks, chunk_size]
         dprnn_input_block = dprnn_input_block.transpose(-1, -2)
         dprnn_output_block = self.separator(dprnn_input_block)
         dprnn_output_block = dprnn_output_block.transpose(-1, -2)
         dprnn_output_block = F.fold(
-            dprnn_output_block.transpose(-1, -2).reshape(-1, dprnn_output_block.size(-1), dprnn_output_block.size(-2)),
+            dprnn_output_block.transpose(-1, -2).reshape(
+                -1, dprnn_output_block.size(-1), dprnn_output_block.size(-2)
+            ),
             output_size=(1, padded_audio_emb.shape[-1]),
             kernel_size=(1, self.chunk_size),
-            stride=(1, self.chunk_size // 2)
+            stride=(1, self.chunk_size // 2),
         ).reshape(padded_audio_emb.shape)
-        dprnn_output_block = dprnn_output_block[:, :, self.pad[0]:-self.pad[1]]
+        dprnn_output_block = dprnn_output_block[:, :, self.pad[0] : -self.pad[1]]
         audio_mask = F.sigmoid(dprnn_output_block)
 
         audio_s1, audio_s2 = self.decoder(audio_emb, audio_mask)
