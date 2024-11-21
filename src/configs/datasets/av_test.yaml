@@ -1,0 +1,7 @@
+ test:
+   _target_: src.datasets.AvssDataset
+   name: "test"
+   audio_path: "/Users/georgijfatahov/Downloads/dla_dataset/audio"
+   mouths_path: "/Users/georgijfatahov/Downloads/dla_dataset/mouths"
+   index_audio_path: "/Users/georgijfatahov/Downloads/dla_dataset/data"
+   instance_transforms: ${transforms.instance_transforms.inference}
