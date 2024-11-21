@@ -29,6 +29,7 @@ class AvssDataset(BaseDataset):
         Args:
             name (str): partition name
         """
+        self.name = name
         self.target_sr = target_sr
         self.audio_path = Path(audio_path)
         self.mouths_path = Path(mouths_path)
@@ -39,7 +40,7 @@ class AvssDataset(BaseDataset):
             index_audio_path = Path(index_audio_path)
         self.index_audio_path = index_audio_path / name
         self.index_audio_path.mkdir(exist_ok=True, parents=True)
-            
+
         self.index_audio_path /= "index.json"
 
         # each nested dataset class must have an index field that
@@ -71,6 +72,13 @@ class AvssDataset(BaseDataset):
 
         data_audio_mix_path = data_dict["audio_mix_path"]
         data_audio_mix = self.load_audio(data_audio_mix_path)
+
+        if self.name == "test":
+            instance_data = {
+                "audio_mix": data_audio_mix
+            }
+            instance_data = self.preprocess_data(instance_data)
+            return instance_data
 
         data_audio_s1_path = data_dict["audio_s1_path"]
         data_audio_s1 = self.load_audio(data_audio_s1_path)
@@ -134,8 +142,13 @@ class AvssDataset(BaseDataset):
 
         for _, _, files in tqdm(os.walk(audio_data_path / "mix")):
             for file in files:
-                mouth_path = file[:-4].split("_")
+                if self.name == "test":
+                    index.append({
+                        "audio_mix_path": str(audio_data_path / "mix" / file),
+                    })
+                    continue
 
+                mouth_path = file[:-4].split("_")
                 index.append({
                     "audio_mix_path": str(audio_data_path / "mix" / file),
                     "audio_s1_path": str(audio_data_path / "s1" / file),
