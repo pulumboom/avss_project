@@ -10,7 +10,7 @@ separator_params:
   bottleneck_channels: 128
   input_channels: 512
   kernel_size: 3
-  n_blocks: 8
+  n_blocks: 12
   n_sources: 2
   n_repeats: 3
 
