@@ -8,6 +8,6 @@ defaults:
 inferencer:
   device_tensors: ["data_object", "labels"] # which tensors should be on device (ex. GPU)
   device: auto # device name or "auto"
-  save_path: "example" # any name here, can be a dataset name
+  save_path: "inference_result" # any name here, can be a dataset name
   seed: 1
   from_pretrained: "/Users/georgijfatahov/Downloads/best/saved/baseline_v2_bigger/model_best.pth" # path to the pretrained model
