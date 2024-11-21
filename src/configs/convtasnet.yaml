@@ -3,18 +3,15 @@ defaults:
   - writer: wandb
   - metrics: audio_metrics
   - datasets: av
-  - dataloader: example
+  - dataloader: convtasnet
   - transforms: example_only_batch
   - _self_
 optimizer:
   _target_: torch.optim.Adam
-  lr: 1e-4
-  weight_decay: 1e-6
+  lr: 1e-3
 lr_scheduler:
-  _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
-  mode: "min"
-  factor: 0.5
-  patience: 5
+  _target_: torch.optim.lr_scheduler.ExponentialLR
+  gamma: 0.9995
 loss_function:
   _target_: src.loss.SiSNR_PIT
 trainer:
