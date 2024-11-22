@@ -1,4 +1,5 @@
 import torch
+import torchaudio
 from tqdm.auto import tqdm
 
 from src.metrics.tracker import MetricTracker
@@ -15,15 +16,15 @@ class Inferencer(BaseTrainer):
     """
 
     def __init__(
-        self,
-        model,
-        config,
-        device,
-        dataloaders,
-        save_path,
-        metrics=None,
-        batch_transforms=None,
-        skip_model_load=False,
+            self,
+            model,
+            config,
+            device,
+            dataloaders,
+            save_path,
+            metrics=None,
+            batch_transforms=None,
+            skip_model_load=False,
     ):
         """
         Initialize the Inferencer.
@@ -48,7 +49,7 @@ class Inferencer(BaseTrainer):
                 Inferencer Class.
         """
         assert (
-            skip_model_load or config.inferencer.get("from_pretrained") is not None
+                skip_model_load or config.inferencer.get("from_pretrained") is not None
         ), "Provide checkpoint or set skip_model_load=True"
 
         self.config = config
@@ -68,7 +69,7 @@ class Inferencer(BaseTrainer):
 
         # define metrics
         self.metrics = metrics
-        if self.metrics is not None:
+        if self.metrics is not None and self.metrics["inference"] is not None:
             self.evaluation_metrics = MetricTracker(
                 *[m.name for m in self.metrics["inference"]],
                 writer=None,
@@ -126,6 +127,21 @@ class Inferencer(BaseTrainer):
             for met in self.metrics["inference"]:
                 metrics.update(met.name, met(**batch))
 
+        if part == "test":
+            if self.save_path is not None:
+                for audio_idx in range(outputs["pred_audio_s1"].shape[0]):
+                    torchaudio.save(
+                        self.save_path / "s1" / (batch["audio_name"][audio_idx] + ".wav"),
+                        outputs["pred_audio_s1"][audio_idx],
+                        sample_rate=16000,
+                    )
+                    torchaudio.save(
+                        self.save_path / "s2" / (batch["audio_name"][audio_idx] + ".wav"),
+                        outputs["pred_audio_s2"][audio_idx],
+                        sample_rate=16000,
+                    )
+            return batch
+
         # Some saving logic. This is an example
         # Use if you need to save predictions on disk
 
@@ -166,17 +182,22 @@ class Inferencer(BaseTrainer):
         self.is_train = False
         self.model.eval()
 
-        self.evaluation_metrics.reset()
+        if self.evaluation_metrics is not None:
+            self.evaluation_metrics.reset()
 
         # create Save dir
         if self.save_path is not None:
-            (self.save_path / part).mkdir(exist_ok=True, parents=True)
+            if part == "test":
+                (self.save_path / "s1").mkdir(exist_ok=True, parents=True)
+                (self.save_path / "s2").mkdir(exist_ok=True, parents=True)
+            else:
+                (self.save_path / part).mkdir(exist_ok=True, parents=True)
 
         with torch.no_grad():
             for batch_idx, batch in tqdm(
-                enumerate(dataloader),
-                desc=part,
-                total=len(dataloader),
+                    enumerate(dataloader),
+                    desc=part,
+                    total=len(dataloader),
             ):
                 batch = self.process_batch(
                     batch_idx=batch_idx,
@@ -184,5 +205,6 @@ class Inferencer(BaseTrainer):
                     part=part,
                     metrics=self.evaluation_metrics,
                 )
-
-        return self.evaluation_metrics.result()
+        if self.evaluation_metrics is not None:
+            return self.evaluation_metrics.result()
+        return {}

@@ -75,7 +75,8 @@ class AvssDataset(BaseDataset):
 
         if self.name == "test":
             instance_data = {
-                "audio_mix": data_audio_mix
+                "audio_mix": data_audio_mix,
+                "audio_name": Path(data_audio_mix_path).stem
             }
             instance_data = self.preprocess_data(instance_data)
             return instance_data
@@ -161,9 +162,8 @@ class AvssDataset(BaseDataset):
         write_json(index, self.index_audio_path)
 
         return index
-    
-    @staticmethod
-    def _assert_index_is_valid(index):
+
+    def _assert_index_is_valid(self, index):
         """
         Check the structure of the index and ensure it satisfies the desired
         conditions.
@@ -177,6 +177,9 @@ class AvssDataset(BaseDataset):
             assert "audio_mix_path" in entry, (
                 "Each dataset item should include field 'audio_mix_path'" " - path to mix audio file."
             )
+            if self.name == "test":
+                continue
+
             assert "audio_s1_path" in entry, (
                 "Each dataset item should include field 'audio_s1_path'"
                 " - object ground-truth speaker 1."
