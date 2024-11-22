@@ -53,8 +53,21 @@ In the `inference.yaml` you can specify:
 - `defaults.model` - name of model config and model itself
 - `defaults.dataset.audio_path` - path to the directory **containing** `test/mix` folder with audio files
 - `defaults.dataloader.batch_size` - batch size
-- `inferencer.save_path` - path to directory where to save predictions (in subfolders `s1` and `s2` with `[name].wav` files)
+- `inferencer.save_path` - path to directory where to save predictions (in subfolders `s1` and `s2` with `[name].wav` files).
+If not absolute path is provided, they will be stored in `./data/saved/[save_path]` folder
 - `inferencer.from_pretrained` - path to the file with model weights
+
+To calculate metrics:
+
+```bash
+python3 metrics_eval.py -cn=metrics_eval.yaml
+```
+
+In the `metrics_eval.yaml` you can specify:
+- `defaults.metrics` - metrics config name (e.g. `audio_metrics` - "SI-SNRi", "SDRi") In `defaults.metrics.inference._target` can be `PESQ, SDRi, SI-SNRi, STOI`.
+- `pred_path` - path to the directory with predictions (in subfolders `s1` and `s2` with `[name].wav` files).
+- `true_path` - path to the directory with true sources (in subfolders `s1` and `s2` with `[name].wav` files).
+- `show_all` - if `True`, will show metrics for each file, otherwise will show mean value.
 
 ## Credits
 
