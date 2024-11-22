@@ -1,0 +1,5 @@
+ test:
+   _target_: src.datasets.AvssDataset
+   name: "test"
+   audio_path: ""
+   instance_transforms: ${transforms.instance_transforms.inference}

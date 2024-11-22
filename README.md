@@ -47,8 +47,14 @@ Where `CONFIG_NAME` is a config from `src/configs` and `HYDRA_CONFIG_ARGUMENTS` 
 To run inference (evaluate the model or save predictions):
 
 ```bash
-python3 inference.py HYDRA_CONFIG_ARGUMENTS
+python3 inference.py -cn=inference.yaml
 ```
+In the `inference.yaml` you can specify:
+- `defaults.model` - name of model config and model itself
+- `defaults.dataset.audio_path` - path to the directory **containing** `train` folder with audio files
+- `defaults.dataloader.batch_size` - batch size
+- `inferencer.save_path` - path to directory where to save predictions (in subfolders `s1` and `s2` with `[name].wav` files)
+- `inferencer.from_pretrained` - path to the file with model weights
 
 ## Credits
 
