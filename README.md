@@ -51,10 +51,44 @@ python3 inference.py -cn=inference.yaml
 ```
 In the `inference.yaml` you can specify:
 - `model` - name of model config and model itself
-- `dataset.test.audio_path` - path to the directory **containing** `test/mix` folder with audio files
+- `datasets.test.dataset_path` - path to the `CustomDirDataset`
+of the following format:
+```
+NameOfTheDirectoryWithUtterances
+├── audio
+│   ├── mix
+│   │   ├── FirstSpeakerID1_SecondSpeakerID1.wav # also may be flac or mp3
+│   │   ├── FirstSpeakerID2_SecondSpeakerID2.wav
+│   │   .
+│   │   .
+│   │   .
+│   │   └── FirstSpeakerIDn_SecondSpeakerIDn.wav
+│   ├── s1 # ground truth for the speaker s1, may not be given
+│   │   ├── FirstSpeakerID1_SecondSpeakerID1.wav # also may be flac or mp3
+│   │   ├── FirstSpeakerID2_SecondSpeakerID2.wav
+│   │   .
+│   │   .
+│   │   .
+│   │   └── FirstSpeakerIDn_SecondSpeakerIDn.wav
+│   └── s2 # ground truth for the speaker s2, may not be given
+│       ├── FirstSpeakerID1_SecondSpeakerID1.wav # also may be flac or mp3
+│       ├── FirstSpeakerID2_SecondSpeakerID2.wav
+│       .
+│       .
+│       .
+│       └── FirstSpeakerIDn_SecondSpeakerIDn.wav
+└── mouths # contains video information for all speakers
+    ├── FirstOrSecondSpeakerID1.npz # npz mouth-crop
+    ├── FirstOrSecondSpeakerID2.npz
+    .
+    .
+    .
+    └── FirstOrSecondSpeakerIDn.npz
+```
+
 - `dataloader.batch_size` - batch size
 - `inferencer.save_path` - path to directory where to save predictions (in subfolders `s1` and `s2` with `[name].wav` files).
-If not absolute path is provided, they will be stored in `./data/saved/[save_path]` folder
+If not absolute path is provided, they will be stored in `./data/saved/[save_path]` folder. By default, `save_path=inference_result`.
 - `inferencer.from_pretrained` - path to the file with model weights
 
 To calculate metrics:

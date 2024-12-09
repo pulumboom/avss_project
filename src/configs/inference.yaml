@@ -1,13 +1,18 @@
 defaults:
   - model: convtasnet
   - metrics: test
-  - datasets: av_test
   - dataloader: example
   - transforms: example_only_batch
   - _self_
+datasets:
+  test:
+    _target_: src.datasets.CustomDirDataset
+    name: "test"
+    dataset_path: null
+    instance_transforms: ${transforms.instance_transforms.inference}
 inferencer:
   device_tensors: [ "audio_mix" ]
   device: auto # device name or "auto"
-  save_path: "" # any name here, can be a dataset name
+  save_path: "inference_result" # any name here, can be a dataset name
   seed: 1
-  from_pretrained: "" # path to the pretrained model
+  from_pretrained: null # path to the pretrained model
