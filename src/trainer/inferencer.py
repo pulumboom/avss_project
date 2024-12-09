@@ -16,15 +16,15 @@ class Inferencer(BaseTrainer):
     """
 
     def __init__(
-            self,
-            model,
-            config,
-            device,
-            dataloaders,
-            save_path,
-            metrics=None,
-            batch_transforms=None,
-            skip_model_load=False,
+        self,
+        model,
+        config,
+        device,
+        dataloaders,
+        save_path,
+        metrics=None,
+        batch_transforms=None,
+        skip_model_load=False,
     ):
         """
         Initialize the Inferencer.
@@ -49,7 +49,7 @@ class Inferencer(BaseTrainer):
                 Inferencer Class.
         """
         assert (
-                skip_model_load or config.inferencer.get("from_pretrained") is not None
+            skip_model_load or config.inferencer.get("from_pretrained") is not None
         ), "Provide checkpoint or set skip_model_load=True"
 
         self.config = config
@@ -129,14 +129,21 @@ class Inferencer(BaseTrainer):
 
         if part == "test":
             if self.save_path is not None:
+                outputs["pred_audio_s1"] = outputs["pred_audio_s1"].cpu()
+                outputs["pred_audio_s2"] = outputs["pred_audio_s2"].cpu()
+
                 for audio_idx in range(outputs["pred_audio_s1"].shape[0]):
                     torchaudio.save(
-                        self.save_path / "s1" / (batch["audio_name"][audio_idx] + ".wav"),
+                        self.save_path
+                        / "s1"
+                        / (batch["audio_name"][audio_idx] + ".wav"),
                         outputs["pred_audio_s1"][audio_idx],
                         sample_rate=16000,
                     )
                     torchaudio.save(
-                        self.save_path / "s2" / (batch["audio_name"][audio_idx] + ".wav"),
+                        self.save_path
+                        / "s2"
+                        / (batch["audio_name"][audio_idx] + ".wav"),
                         outputs["pred_audio_s2"][audio_idx],
                         sample_rate=16000,
                     )
@@ -195,9 +202,9 @@ class Inferencer(BaseTrainer):
 
         with torch.no_grad():
             for batch_idx, batch in tqdm(
-                    enumerate(dataloader),
-                    desc=part,
-                    total=len(dataloader),
+                enumerate(dataloader),
+                desc=part,
+                total=len(dataloader),
             ):
                 batch = self.process_batch(
                     batch_idx=batch_idx,

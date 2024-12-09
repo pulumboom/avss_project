@@ -39,10 +39,10 @@ Installation may depend on your task. The general steps are the following:
 To train a model, run the following command:
 
 ```bash
-python3 train.py -cn=CONFIG_NAME convtasnet.yaml
+python3 train.py -cn=convtasnet HYDRA_CONFIG_ARGUMENTS
 ```
 
-Where `CONFIG_NAME` is a config from `src/configs` and `HYDRA_CONFIG_ARGUMENTS` are optional arguments.
+Where `HYDRA_CONFIG_ARGUMENTS` are optional arguments.
 
 To run inference (evaluate the model or save predictions):
 
@@ -50,9 +50,9 @@ To run inference (evaluate the model or save predictions):
 python3 inference.py -cn=inference.yaml
 ```
 In the `inference.yaml` you can specify:
-- `defaults.model` - name of model config and model itself
-- `defaults.dataset.audio_path` - path to the directory **containing** `test/mix` folder with audio files
-- `defaults.dataloader.batch_size` - batch size
+- `model` - name of model config and model itself
+- `dataset.test.audio_path` - path to the directory **containing** `test/mix` folder with audio files
+- `dataloader.batch_size` - batch size
 - `inferencer.save_path` - path to directory where to save predictions (in subfolders `s1` and `s2` with `[name].wav` files).
 If not absolute path is provided, they will be stored in `./data/saved/[save_path]` folder
 - `inferencer.from_pretrained` - path to the file with model weights
