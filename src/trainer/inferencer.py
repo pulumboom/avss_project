@@ -95,6 +95,12 @@ class Inferencer(BaseTrainer):
             part_logs[part] = logs
         return part_logs
 
+    def _normalize_audio(self, audio):
+        max_val = torch.max(torch.abs(audio))
+        if max_val > 0:
+            audio = audio / max_val
+        return audio
+
     def process_batch(self, batch_idx, batch, metrics, part):
         """
         Run batch through the model, compute metrics, and
@@ -129,22 +135,28 @@ class Inferencer(BaseTrainer):
 
         if part == "test":
             if self.save_path is not None:
-                outputs["pred_audio_s1"] = outputs["pred_audio_s1"].cpu()
-                outputs["pred_audio_s2"] = outputs["pred_audio_s2"].cpu()
+                pred_audio_s1 = batch["pred_audio_s1"].cpu().detach()
+                pred_audio_s2 = batch["pred_audio_s2"].cpu().detach()
 
-                for audio_idx in range(outputs["pred_audio_s1"].shape[0]):
+                for audio_idx in range(batch["pred_audio_s1"].shape[0]):
+                    s1 = pred_audio_s1[audio_idx]
+                    s2 = pred_audio_s2[audio_idx]
+
+                    s1 = self._normalize_audio(s1)
+                    s2 = self._normalize_audio(s2)
+
                     torchaudio.save(
                         self.save_path
                         / "s1"
                         / (batch["audio_name"][audio_idx] + ".wav"),
-                        outputs["pred_audio_s1"][audio_idx],
+                        s1,
                         sample_rate=16000,
                     )
                     torchaudio.save(
                         self.save_path
                         / "s2"
                         / (batch["audio_name"][audio_idx] + ".wav"),
-                        outputs["pred_audio_s2"][audio_idx],
+                        s2,
                         sample_rate=16000,
                     )
             return batch

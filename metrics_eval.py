@@ -4,6 +4,8 @@ import torchaudio
 import hydra
 from hydra.utils import instantiate
 
+from src.loss.sisnr_pit import SiSNR_PIT
+
 warnings.filterwarnings("ignore", category=UserWarning)
 
 @hydra.main(version_base=None, config_path="src/configs", config_name="inference")
@@ -24,6 +26,7 @@ def main(config):
     pred_s2_path = os.path.join(pred_path, 's2')
     true_s1_path = os.path.join(true_path, 's1')
     true_s2_path = os.path.join(true_path, 's2')
+    mix_path = os.path.join(true_path, 'mix')
 
     true_files = sorted(os.listdir(true_s1_path))
     pred_files = sorted(os.listdir(pred_s1_path))
@@ -39,6 +42,8 @@ def main(config):
     metric_sums = {met.name: 0.0 for met in metrics["inference"]}
     num_samples = 0
 
+    loss = SiSNR_PIT()
+
     for audio_file in sorted(common_files):
         pred_s1_file = os.path.join(pred_s1_path, audio_file + '.wav')
         pred_s2_file = os.path.join(pred_s2_path, audio_file + '.wav')
@@ -46,8 +51,15 @@ def main(config):
         true_s1_file = os.path.join(true_s1_path, audio_file + '.wav')
         true_s2_file = os.path.join(true_s2_path, audio_file + '.wav')
 
-        if not (os.path.exists(pred_s1_file) and os.path.exists(pred_s2_file)
-                and os.path.exists(true_s1_file) and os.path.exists(true_s2_file)):
+        mix_file = os.path.join(mix_path, audio_file + ".wav")
+
+        if not (
+            os.path.exists(pred_s1_file)
+            and os.path.exists(pred_s2_file)
+            and os.path.exists(true_s1_file)
+            and os.path.exists(true_s2_file)
+            and os.path.exists(mix_file)
+        ):
             print(f"Skipping {audio_file}: files not found in both datasets.")
             continue
 
@@ -56,11 +68,11 @@ def main(config):
         true_audio_s1, sr_true_s1 = torchaudio.load(true_s1_file)
         true_audio_s2, sr_true_s2 = torchaudio.load(true_s2_file)
 
-        if not (sr_pred_s1 == sr_pred_s2 == sr_true_s1 == sr_true_s2):
+        audio_mix, sr_mix = torchaudio.load(mix_file)
+
+        if not (sr_pred_s1 == sr_pred_s2 == sr_true_s1 == sr_true_s2 == sr_mix):
             print(f"Skipping {audio_file}: different sampling rates.")
             continue
-
-        audio_mix = true_audio_s1 + true_audio_s2
 
         batch = {
             'audio_mix': audio_mix,
@@ -69,6 +81,12 @@ def main(config):
             'pred_audio_s1': pred_audio_s1,
             'pred_audio_s2': pred_audio_s2,
         }
+
+        # to use pit
+        batch.update(loss(**batch))
+
+        batch["pred_audio_s1"] = batch["pred_audio_s1"].squeeze(0)
+        batch["pred_audio_s2"] = batch["pred_audio_s2"].squeeze(0)
 
         if config.show_all:
             print(f"\nFile: {audio_file}")
